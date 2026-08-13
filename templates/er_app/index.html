@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ER Diagram Demo</title>
+  <link rel="stylesheet" href='static/er_app/css/style.css' />
+</head>
+<body>
+  <header>
+    <h1>ER Diagram</h1>
+  </header>
+  <main>
+    <div class="input-card">
+      <h2>Welcome</h2>
+      <p>Upload your tables here (csv).</p>
+      <form action="/upload" method="post" enctype="multipart/form-data" class="input-form">
+        <!-- <label for="file-upload">Choose a file:</label> -->
+        <input type="file" name="files" id="input-files" multiple/>
+        <input type="submit" value="Upload" />
+      </form>
+      {% if error!="" %}
+        <p>{{error}}</p>
+      {% endif %}
+      <input type="button" value="reset" class="reset"></input>
+    </div>
+
+    <div class="canvas">
+      {% for table_name,content in tables.items() %}
+      <div class="table-card">
+          <h2>{{table_name}}</h2>
+          {% for column_name,type in content.columns.items() %}
+          <div class="row" >
+            <p class = "pk {% if (content.pk == column_name) %} active {% endif %}" id="{{table_name}}-{{ column_name }}">{% if (content.pk == column_name) %} pk {% endif %}</p>
+            <p class = "column">
+              {{column_name}}
+              <span class="dtype"> | {{type}}</span>
+            </p>
+            {% if column_name in content.fk %} <p class="fk">fk</p> {% endif %}
+          </div>
+          {% endfor %}
+        <button class="table-delete">X</button>
+      </div>
+      {% endfor %}
+      <canvas></canvas>
+    </div>
+
+  </main>
+  <footer>&copy; 2026 ER Diagram Demo</footer>
+</body>
+<script>
+  const tablesData = {{ tables | tojson }};
+</script>
+<script src="static\er_app\scripts\script.js"></script>
+</html>
+

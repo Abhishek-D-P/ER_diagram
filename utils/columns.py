@@ -1,8 +1,7 @@
 import pandas as pd
 
-def get_col_names(path):
+def get_col_names(data):
     
-    data=pd.read_csv(path)
     col=data.columns
     col_names=[]
     for i in col:
