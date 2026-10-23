@@ -121,13 +121,21 @@ function drawConnectors() {
       const source = canvasCoords(sourceEl);
       const target = canvasCoords(targetEl);
 
-      const sx = source.x;
-      const sy = source.y + parseInt(source.height / 2);
+      let sx = source.x;
+      let sy = source.y + parseInt(source.height / 2);
 
-      const tx = target.x;
-      const ty = target.y + parseInt(target.height / 2);
+      let tx = target.x;
+      let ty = target.y + parseInt(target.height / 2);
 
       let cpOffset = Math.abs(sx - tx) * 0.5;
+
+      let dir = 1;
+      if(sx>tx){
+        dir = -1;
+      }
+      else{
+        sx = sx + sourceEl.parentElement.getBoundingClientRect().width;
+      }
 
       const arrowOffest = 10;
 
@@ -141,10 +149,7 @@ function drawConnectors() {
       ctx.lineTo(sx + cpOffset, sy);
       ctx.lineTo(sx + cpOffset, ty);
       ctx.lineTo(tx, ty);
-      let dir = 1;
-      if(sx>tx){
-        dir = -1;
-      }
+      
       ctx.moveTo(sx + 2*arrowOffest*dir,sy);
       ctx.lineTo(sx+arrowOffest*dir,sy-arrowOffest);
       ctx.moveTo(sx + 2*arrowOffest*dir,sy);
