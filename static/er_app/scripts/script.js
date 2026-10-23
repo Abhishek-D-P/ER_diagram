@@ -187,9 +187,14 @@ function drawConnectors() {
 
       if (!sourceEl || !targetEl) continue;
 
+      // Anchor to the full column row, not the tiny PK label cell.
+      const sourceRow = sourceEl.closest(".row");
+      const targetRow = targetEl.closest(".row");
+      if (!sourceRow || !targetRow) continue;
+
       const { start, end, horizontalFirst } = getConnectorEndpoints(
-        sourceEl,
-        targetEl
+        sourceRow,
+        targetRow
       );
 
       // Use a midpoint lane to create a tidy orthogonal route.
