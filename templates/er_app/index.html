@@ -22,6 +22,10 @@
       {% if error!="" %}
         <p>{{error}}</p>
       {% endif %}
+      <div class="export-actions" aria-label="Export ER diagram">
+        <button type="button" id="export-png">Export PNG</button>
+        <button type="button" id="export-svg">Export SVG</button>
+      </div>
       <input type="button" value="reset" class="reset"></input>
     </div>
 
@@ -51,6 +55,6 @@
 <script>
   const tablesData = {{ tables | tojson }};
 </script>
-<script src="static\er_app\scripts\script.js"></script>
+<script src="static/er_app/scripts/script.js"></script>
+<script src="static/er_app/scripts/export.js"></script>
 </html>
-
