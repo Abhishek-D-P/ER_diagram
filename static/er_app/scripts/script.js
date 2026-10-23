@@ -205,28 +205,60 @@ allTableDelete.forEach((tableDelete) =>{
 // Attempt to initialize table dragging when a table card is clicked.
 // WARNING: The current infinite while loop freezes the browser.
 // Replace this with proper mousedown, mousemove, and mouseup handling.
-allTableCards.forEach((tableCard)=>{
-  let lastX = 0;
-  let lastY = 0;
-  
-  tableCard.addEventListener("mousedown",(event)=>{
-    mouseX = event.clientX;
-    mouseY = event.clientY; 
-    // tableCard.style.position = 'absolute';
-    function onMove(event){
-      coords = {"x":event.clientX-mouseX + lastX,"y":event.clientY-mouseY + lastY};
-      tableCard.style.transform = `translate(${coords.x}px,${coords.y}px)`;
-      console.log(coords);
+
+ class TableDrag {
+  constructor(tableCard) {
+    this.tableCard = tableCard;
+    this.lastX = 0;
+    this.lastY = 0;
+    
+    // Store mouse start positions per drag session
+    this.mouseX = 0;
+    this.mouseY = 0;
+    
+    // Track active coordinates for the current frame
+    this.currentX = 0;
+    this.currentY = 0;
+  }
+
+  // Use arrow function syntax to auto-bind 'this' to the class instance
+  onMove = (event) => {
+    const deltaX = event.clientX - this.mouseX;
+    const deltaY = event.clientY - this.mouseY;
+    
+    this.currentX = this.lastX + deltaX;
+    this.currentY = this.lastY + deltaY;
+    
+    this.tableCard.style.transform = `translate(${this.currentX}px, ${this.currentY}px)`;
+    
+    if (typeof drawConnectors === 'function') {
       drawConnectors();
-
     }
-    window.addEventListener('mousemove',onMove);
+  };
 
-    window.addEventListener('mouseup',()=>{
-      lastX = coords.x;
-      lastY = coords.y;
-      window.removeEventListener('mousemove',onMove);
+  main() {
+    this.tableCard.addEventListener("mousedown", (event) => {
+      // Record starting positions
+      this.mouseX = event.clientX;
+      this.mouseY = event.clientY; 
+      
+      // Add global listeners
+      window.addEventListener('mousemove', this.onMove);
+
+      // Clean up on release
+      window.addEventListener('mouseup', () => {
+        // Permanently save the last dropped position
+        this.lastX = this.currentX;
+        this.lastY = this.currentY;
+        
+        window.removeEventListener('mousemove', this.onMove);
+      }, { once: true }); // { once: true } auto-deletes this listener after running once
     });
+  }
+}
 
-  });
+// Looped instantiations remain exactly the same!
+allTableCards.forEach((tableCard) => {
+  const dragObject = new TableDrag(tableCard);
+  dragObject.main();
 });
