@@ -27,7 +27,7 @@
 
     <div class="canvas">
       {% for table_name,content in tables.items() %}
-      <div class="table-card">
+      <div class="table-card table-{{table_name}}">
           <h2>{{table_name}}</h2>
           {% for column_name,type in content.columns.items() %}
           <div class="row" >

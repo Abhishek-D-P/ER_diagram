@@ -59,12 +59,10 @@ main {
 }
 
 .canvas {
-  background-color: var(--body-bg);
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   column-gap: 10px;
+  row-gap: 50px;
   position: relative;
 }
 
@@ -148,5 +146,9 @@ canvas {
   padding: 3px 5px;
   background-color: #f38b71;
   font-size: 0.5rem;
+}
+
+.table-delete:hover{
+  cursor: pointer;
 }
 

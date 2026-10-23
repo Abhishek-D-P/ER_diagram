@@ -12,11 +12,10 @@ Status legend: **DONE** = implemented; **PARTIAL** = implemented incompletely or
 - [x] Update `/upload` route to loop through uploaded files (current form and route use the field name `files`)
 - [x] Save each file as a separate entry in `tables` dict
 
-**Story 1.2 — Detect data types — PARTIAL**
-- [x] Infer types from pandas dtypes (INT, VARCHAR, FLOAT, DATE, BOOLEAN mapping exists)
-- [x] Store inferred types in the schema's `columns` mapping
-- [x] Display type next to column name in HTML
-- [ ] Parse date-like strings before inference; currently date columns read as strings may be classified as VARCHAR
+**Story 1.2 — Detect data types**
+- [✅] For each column, infer type from pandas dtype (`int64` → INT, `object` → VARCHAR, `float64` → FLOAT, `datetime64` → DATE)
+- [✅] Store in schema as `table_dict[name]["types"]`
+- [✅] Display type next to column name in the HTML
 
 ---
 
