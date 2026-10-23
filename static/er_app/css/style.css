@@ -34,7 +34,6 @@ main {
   position: relative;
 }
 
-
 .input-card h2 {
   margin-bottom: 0.5rem;
   color: #2c3e50;
@@ -51,11 +50,11 @@ main {
   margin-top: 5px;
 }
 
-.reset{
-   width: 150px;
-   position: absolute;
-   right: 0;
-   bottom: 0;
+.reset {
+  width: 150px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }
 
 .canvas {
@@ -82,7 +81,7 @@ main {
   display: grid;
   grid-template-columns: 30px 1fr 30px;
   column-gap: 5px;
-  margin: 3px 0px;
+  margin: 3px 0;
 }
 
 .column {
@@ -90,7 +89,7 @@ main {
   text-wrap: balance;
 }
 
-.column:hover{
+.column:hover {
   cursor: text;
 }
 
@@ -98,7 +97,11 @@ main {
   border-radius: 5px;
   padding: 2px;
   font-size: 0.8rem;
+  display: inline-block;
+  width: 100%;
+  background-color: #f3ab71;
 }
+
 .pk.active {
   display: inline-block;
   background-color: rgba(125, 232, 164, 0.701);
@@ -111,8 +114,8 @@ main {
   cursor: pointer;
 }
 
-.columns:hover{
-  cursor:text;
+.columns:hover {
+  cursor: text;
 }
 
 footer {
@@ -126,20 +129,15 @@ footer {
   font-size: 8px;
 }
 
-.fk {
-  display: inline-block;
-  width: 100%;
-  background-color: #f3ab71;
-}
-
 canvas {
   position: absolute;
   top: 0;
   left: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
-.table-delete{
+.table-delete {
   position: absolute;
   right: 5px;
   top: 5px;
@@ -149,4 +147,3 @@ canvas {
   background-color: #f38b71;
   font-size: 0.5rem;
 }
-
