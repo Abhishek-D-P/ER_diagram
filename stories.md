@@ -103,8 +103,8 @@ Status legend: **DONE** = implemented; **PARTIAL** = implemented incompletely or
 - [ ] Download as `.sql` file
 
 **Story 6.2 — Export as image — TODO**
-- [ ] Capture the diagram as PNG using canvas or a full-page capture library
-- [ ] Download as PNG
+- [x] Capture the diagram as SVG using canvas or a full-page capture library
+- [x] Download as SVG
 
 **Story 6.3 — Export as JSON schema — PARTIAL**
 - [x] Write `results/schema.json` on upload and some schema edits
