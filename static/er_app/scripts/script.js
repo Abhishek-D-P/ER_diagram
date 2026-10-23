@@ -206,12 +206,27 @@ allTableDelete.forEach((tableDelete) =>{
 // WARNING: The current infinite while loop freezes the browser.
 // Replace this with proper mousedown, mousemove, and mouseup handling.
 allTableCards.forEach((tableCard)=>{
-    tableCard.addEventListener("mousedown",(event)=>{
-      
-        coords = {"x":event.clientX,"y":event.clientY};
-        // tableCard.top = coords.x;
-        // tableCard.left = coords.y;
-        console.log(tableCard.getBoundingClientRect());
-        
+  let lastX = 0;
+  let lastY = 0;
+  
+  tableCard.addEventListener("mousedown",(event)=>{
+    mouseX = event.clientX;
+    mouseY = event.clientY; 
+    // tableCard.style.position = 'absolute';
+    function onMove(event){
+      coords = {"x":event.clientX-mouseX + lastX,"y":event.clientY-mouseY + lastY};
+      tableCard.style.transform = `translate(${coords.x}px,${coords.y}px)`;
+      console.log(coords);
+      drawConnectors();
+
+    }
+    window.addEventListener('mousemove',onMove);
+
+    window.addEventListener('mouseup',()=>{
+      lastX = coords.x;
+      lastY = coords.y;
+      window.removeEventListener('mousemove',onMove);
     });
+
+  });
 });
