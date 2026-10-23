@@ -1,25 +1,19 @@
-let rows = document.querySelectorAll(".row .pk");
-let reset = document.querySelector(".reset");
-let columns = document.querySelectorAll(".column");
-let allTableDelete = document.querySelectorAll(".table-delete");
-let allTableCards = document.querySelectorAll(".table-card");
+const rows = document.querySelectorAll(".row .pk");
+const reset = document.querySelector(".reset");
+const columns = document.querySelectorAll(".column");
+const allTableDelete = document.querySelectorAll(".table-delete");
 
 rows.forEach((row) => {
   row.addEventListener("click", () => {
-    tableCard = row.closest(".table-card");
+    const tableCard = row.closest(".table-card");
+    const tableName = tableCard.querySelector("h2").textContent.trim();
+    const pkColumn = row.id.split("-").at(-1);
 
-    tableName = tableCard.querySelector("h2").textContent.trim();
-    pkColumn = row.id.split("-").at(-1);
-    console.log(pkColumn);
     fetch("/set-pk", {
       method: "post",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ table: tableName, pk: pkColumn }),
-    }).then(() => {
-      location.reload();
-    });
+    }).then(() => location.reload());
   });
 });
 
@@ -28,24 +22,30 @@ columns.forEach((column) => {
     column.contentEditable = "true";
     column.focus();
   });
+
   column.addEventListener("blur", () => {
     column.contentEditable = "false";
     const row = column.closest(".row");
     const pk = row.querySelector(".pk");
     const [tableName, oldColumn] = pk.id.split("-");
     const newColumn = column.childNodes[0].textContent.trim();
+
     if (newColumn === oldColumn) return;
+
     fetch("/rename-column", {
       method: "post",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table: tableName, old_name: oldColumn, new_name: newColumn }),
-    }).then(() => {
-      location.reload();
-    });
+      body: JSON.stringify({
+        table: tableName,
+        old_name: oldColumn,
+        new_name: newColumn,
+      }),
+    }).then(() => location.reload());
   });
-  column.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
+
+  column.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
       column.blur();
     }
   });
@@ -54,13 +54,15 @@ columns.forEach((column) => {
 const canvasEl = document.querySelector("canvas");
 const canvasContainer = document.querySelector(".canvas");
 
+/** Resize the overlay to cover the complete diagram canvas. */
 function resizeCanvas() {
-  canvasEl.width = canvasContainer.offsetWidth;
-  canvasEl.height = canvasContainer.offsetHeight;
+  canvasEl.width = canvasContainer.clientWidth;
+  canvasEl.height = canvasContainer.clientHeight;
 }
 
-function canvasCoords(el) {
-  const rect = el.getBoundingClientRect();
+/** Get an element's coordinates relative to the diagram container. */
+function canvasCoords(element) {
+  const rect = element.getBoundingClientRect();
   const containerRect = canvasContainer.getBoundingClientRect();
 
   return {
@@ -71,81 +73,180 @@ function canvasCoords(el) {
   };
 }
 
-// Generate unique color per table using evenly spaced hues
-const tableNames = Object.keys(tablesData);
-const tableColors = {};
-tableNames.forEach((name, i) => {
-  const hue = Math.round((360 / tableNames.length) * i);
-  tableColors[name] = `hsla(${hue}, 70%, 50%, 0.85)`;
-});
+/** Draw a path with small rounded 90-degree corners. */
+function drawRoundedOrthogonalPath(ctx, points, radius = 8) {
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
 
+  for (let i = 1; i < points.length - 1; i++) {
+    const previous = points[i - 1];
+    const current = points[i];
+    const next = points[i + 1];
+
+    const incomingLength = Math.hypot(
+      current.x - previous.x,
+      current.y - previous.y
+    );
+    const outgoingLength = Math.hypot(
+      next.x - current.x,
+      next.y - current.y
+    );
+    const cornerRadius = Math.min(radius, incomingLength / 2, outgoingLength / 2);
+
+    const beforeCorner = {
+      x: current.x - Math.sign(current.x - previous.x) * cornerRadius,
+      y: current.y - Math.sign(current.y - previous.y) * cornerRadius,
+    };
+    const afterCorner = {
+      x: current.x + Math.sign(next.x - current.x) * cornerRadius,
+      y: current.y + Math.sign(next.y - current.y) * cornerRadius,
+    };
+
+    ctx.lineTo(beforeCorner.x, beforeCorner.y);
+    ctx.quadraticCurveTo(current.x, current.y, afterCorner.x, afterCorner.y);
+  }
+
+  const last = points[points.length - 1];
+  ctx.lineTo(last.x, last.y);
+}
+
+/**
+ * Pick the side of each table that faces the other table.
+ * This keeps relationships from starting at the table center.
+ */
+function getConnectorEndpoints(sourceEl, targetEl) {
+  const source = canvasCoords(sourceEl);
+  const target = canvasCoords(targetEl);
+
+  const sourceCenter = {
+    x: source.x + source.width / 2,
+    y: source.y + source.height / 2,
+  };
+  const targetCenter = {
+    x: target.x + target.width / 2,
+    y: target.y + target.height / 2,
+  };
+
+  const dx = targetCenter.x - sourceCenter.x;
+  const dy = targetCenter.y - sourceCenter.y;
+
+  // Use left/right edges when tables are mostly side-by-side.
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    const sourceOnLeft = dx >= 0;
+    return {
+      start: {
+        x: sourceOnLeft ? source.x + source.width : source.x,
+        y: sourceCenter.y,
+      },
+      end: {
+        x: sourceOnLeft ? target.x : target.x + target.width,
+        y: targetCenter.y,
+      },
+      horizontalFirst: true,
+    };
+  }
+
+  // Use top/bottom edges when tables are mostly vertically aligned.
+  const sourceOnTop = dy >= 0;
+  return {
+    start: {
+      x: sourceCenter.x,
+      y: sourceOnTop ? source.y + source.height : source.y,
+    },
+    end: {
+      x: targetCenter.x,
+      y: sourceOnTop ? target.y : target.y + target.height,
+    },
+    horizontalFirst: false,
+  };
+}
+
+/** Draw clean, muted, rounded right-angle connectors for all foreign keys. */
 function drawConnectors() {
+  if (!canvasEl || !canvasContainer) return;
+
   resizeCanvas();
   const ctx = canvasEl.getContext("2d");
   ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+  ctx.strokeStyle = "#64748b";
+  ctx.fillStyle = "#64748b";
+  ctx.lineWidth = 1.8;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
   for (const [tableName, content] of Object.entries(tablesData)) {
-    for (const [fkcolumn, refTable] of Object.entries(content.fk)) {
-      const sourceEl = document.getElementById(`${tableName}-${fkcolumn}`);
-      const targetEl = document.getElementById(`${refTable}-${fkcolumn}`);
+    for (const [fkColumn, refTable] of Object.entries(content.fk || {})) {
+      const sourceEl = document.getElementById(`${tableName}-${fkColumn}`);
+
+      // A foreign key can reference a differently named primary-key column.
+      const referencedPk = tablesData[refTable]?.pk;
+      const targetEl = referencedPk
+        ? document.getElementById(`${refTable}-${referencedPk}`)
+        : null;
 
       if (!sourceEl || !targetEl) continue;
 
-      const source = canvasCoords(sourceEl);
-      const target = canvasCoords(targetEl);
+      const { start, end, horizontalFirst } = getConnectorEndpoints(
+        sourceEl,
+        targetEl
+      );
 
-      const sx = source.x;
-      const sy = source.y + parseInt(source.height / 2);
+      // Use a midpoint lane to create a tidy orthogonal route.
+      const points = horizontalFirst
+        ? [
+            start,
+            { x: (start.x + end.x) / 2, y: start.y },
+            { x: (start.x + end.x) / 2, y: end.y },
+            end,
+          ]
+        : [
+            start,
+            { x: start.x, y: (start.y + end.y) / 2 },
+            { x: end.x, y: (start.y + end.y) / 2 },
+            end,
+          ];
 
-      const tx = target.x;
-      const ty = target.y + parseInt(target.height / 2);
-
-      const cpOffset = Math.abs(sx - tx) * 0.5;
-
-      ctx.beginPath();
-      ctx.arc(sx, sy, 5, 0, 360);
-      ctx.moveTo(sx, sy);
-      ctx.bezierCurveTo(sx + cpOffset, sy, tx - cpOffset, ty, tx, ty);
-      ctx.strokeStyle = tableColors[tableName];
-      ctx.lineWidth = 2;
+      drawRoundedOrthogonalPath(ctx, points);
       ctx.stroke();
+
+      // Small endpoint dots make each relationship easier to follow.
+      for (const point of [start, end]) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 }
 
 drawConnectors();
 
-reset.addEventListener("click", () => {
-  fetch("/reset").then(() => {
-    location.reload();
+// Redraw connectors when the viewport or table layout changes.
+window.addEventListener("resize", drawConnectors);
+if ("ResizeObserver" in window) {
+  const diagramObserver = new ResizeObserver(drawConnectors);
+  diagramObserver.observe(canvasContainer);
+  document.querySelectorAll(".table-card").forEach((card) => {
+    diagramObserver.observe(card);
   });
-});
-
-function updateColumnsName(content) {
-  console.log(name);
 }
 
+if (reset) {
+  reset.addEventListener("click", () => {
+    fetch("/reset").then(() => location.reload());
+  });
+}
 
-allTableDelete.forEach((tableDelete) =>{
-    tableDelete.addEventListener("click",()=>{
-        tableCard = tableDelete.closest(".table-card");
-        tableToDelete = tableCard.querySelector("h2").textContent.trim();
-        fetch("delete-card",{
-            method: "post",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tableToDelete: tableToDelete}),
-        }).then(()=>{
-            location.reload();
-        })
-    });
-});
+allTableDelete.forEach((tableDelete) => {
+  tableDelete.addEventListener("click", () => {
+    const tableCard = tableDelete.closest(".table-card");
+    const tableToDelete = tableCard.querySelector("h2").textContent.trim();
 
-allTableCards.forEach((tableCard)=>{
-    tableCard.addEventListener("mousedown",(event)=>{
-        while(true){
-        coords = {"x":event.clientX,"y":event.clientY};
-        tableCard.top = coords.x;
-        tableCard.left = coords.y;
-        console.log(coords);
-        }
-    });
+    fetch("delete-card", {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tableToDelete }),
+    }).then(() => location.reload());
+  });
 });
