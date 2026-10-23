@@ -129,16 +129,17 @@ function drawConnectors() {
       let tx = target.x;
       let ty = target.y + parseInt(target.height / 2);
 
-      let cpOffset = Math.abs(sx - tx) * 0.5;
-
+      
       let dir = 1;
       if(sx>tx){
         dir = -1;
+        tx = tx + targetEl.parentElement.getBoundingClientRect().width;
       }
       else{
         sx = sx + sourceEl.parentElement.getBoundingClientRect().width;
       }
-
+      
+      let cpOffset = Math.abs(sx - tx) * 0.5;
       const arrowOffest = 10;
 
       ctx.beginPath();
