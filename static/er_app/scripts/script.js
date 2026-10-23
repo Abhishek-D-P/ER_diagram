@@ -112,6 +112,8 @@ function drawConnectors() {
   const ctx = canvasEl.getContext("2d");
   ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
   for (const [tableName, content] of Object.entries(tablesData)) {
+    const table = document.querySelector(`.table-${tableName} h2`);
+    table.style = `background-color:${tableColors[tableName]}`;
     for (const [fkcolumn, refTable] of Object.entries(content.fk)) {
       const sourceEl = document.getElementById(`${tableName}-${fkcolumn}`);
       const targetEl = document.getElementById(`${refTable}-${fkcolumn}`);
